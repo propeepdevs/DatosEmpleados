@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Iniciar Sesión - PROPEEP RR.HH.{% endblock %}
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<style>
+  .login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #003B6F 0%, #005BA5 60%, #0074CC 100%);
+  }
+  .login-box {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.3);
+    padding: 2.5rem 2.8rem;
+    width: min(400px, 96vw);
+  }
+  .login-logo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .login-logo .org { font-size: 2rem; font-weight: 800; color: #003B6F; letter-spacing: 1px; }
+  .login-logo .sub { font-size: .85rem; color: #6B7280; margin-top: .2rem; }
+  .login-logo .badge {
+    display: inline-block;
+    background: #E8A020;
+    color: #000;
+    font-weight: 700;
+    font-size: .78rem;
+    padding: 3px 12px;
+    border-radius: 20px;
+    margin-top: .4rem;
+  }
+  .login-box h2 { font-size: 1.1rem; color: #003B6F; margin-bottom: 1.4rem; font-weight: 700; text-align: center; }
+  .hint { font-size: .8rem; color: #6B7280; margin-top: .3rem; }
+  .btn-login {
+    width: 100%;
+    padding: .7rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    margin-top: 1.2rem;
+    background: #003B6F;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background .2s;
+  }
+  .btn-login:hover { background: #005BA5; }
+</style>
+
+<div class="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="org">PROPEEP</div>
+      <div class="sub">Departamento de Recursos Humanos</div>
+      <span class="badge">Portal del Empleado</span>
+    </div>
+    <h2>🔐 Acceso al Sistema</h2>
+
+    {% if error %}
+    <div class="alert alert-danger">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <div class="form-group" style="margin-bottom:.9rem">
+        <label for="cedula">Cédula de Identidad</label>
+        <input type="text" id="cedula" name="cedula" placeholder="Ej: 001-1234567-8"
+               required maxlength="13" style="padding:.55rem .8rem;border:1.5px solid #E5E7EB;border-radius:6px;font-size:.95rem;">
+      </div>
+      <div class="form-group">
+        <label for="clave">Clave (últimos 4 dígitos de su cuenta bancaria)</label>
+        <input type="password" id="clave" name="clave" placeholder="••••"
+               required maxlength="4" style="padding:.55rem .8rem;border:1.5px solid #E5E7EB;border-radius:6px;font-size:.95rem;">
+        <span class="hint">📌 Su clave son los últimos 4 dígitos de su cuenta bancaria registrada.</span>
+      </div>
+      <button type="submit" class="btn-login">Iniciar Sesión →</button>
+    </form>
+
+    <p style="text-align:center;font-size:.78rem;color:#9CA3AF;margin-top:1.2rem;">
+      ¿Problemas para acceder? Comuníquese con Recursos Humanos.
+    </p>
+  </div>
+</div>
+
+<script>
+  // Formatear cédula con guiones: 001-1234567-8
+  const cedulaInput = document.getElementById('cedula');
+  
+  cedulaInput.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, ''); // Remover todo excepto números
+    
+    // Limitar a 11 dígitos
+    if (value.length > 11) {
+      value = value.substring(0, 11);
+    }
+    
+    // Aplicar formato XXX-XXXXXXX-X
+    if (value.length >= 4) {
+      if (value.length >= 11) {
+        value = value.substring(0, 3) + '-' + value.substring(3, 10) + '-' + value.substring(10, 11);
+      } else {
+        value = value.substring(0, 3) + '-' + value.substring(3);
+      }
+    }
+    
+    e.target.value = value;
+  });
+  
+  // Enviar con guiones (sin removerlos, ya que la BD tiene las cédulas con guiones)
+  // No se hace nada en submit, se envía tal como está
+</script>
+{% endblock %}

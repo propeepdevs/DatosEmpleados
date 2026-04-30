@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Menú Principal - PROPEEP{% endblock %}
+
+{% block content %}
+<style>
+  .menu-page {
+    min-height: calc(100vh - 58px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 2.5rem 1rem;
+    background: var(--bg);
+  }
+  .menu-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .menu-header h1 { font-size: 1.5rem; color: var(--primary); font-weight: 800; }
+  .menu-header .dept {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    font-size: .85rem;
+    padding: 3px 14px;
+    border-radius: 20px;
+    margin-top: .5rem;
+  }
+  .menu-header .welcome { color: var(--gray); font-size:.95rem; margin-top:.4rem; }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 700px;
+  }
+  .menu-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.1);
+    padding: 2rem 1.8rem;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    border: 2px solid transparent;
+    transition: border .2s, box-shadow .2s, transform .15s;
+    cursor: pointer;
+  }
+  .menu-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 6px 24px rgba(0,59,111,.2);
+    transform: translateY(-3px);
+  }
+  .menu-card .icon { font-size: 2.5rem; margin-bottom: .8rem; }
+  .menu-card .label { font-size: 1rem; font-weight: 700; color: var(--primary); }
+  .menu-card .desc  { font-size: .82rem; color: var(--gray); margin-top: .3rem; }
+  .menu-card.disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+</style>
+
+<div class="menu-page">
+  <div class="menu-header">
+    <h1>Bienvenido(a), {{ nombre }}</h1>
+    {% if depto %}<span class="dept">🏢 {{ depto }}</span>{% endif %}
+    <p class="welcome">Departamento de Recursos Humanos — Portal del Empleado</p>
+  </div>
+
+  <div class="menu-grid">
+    <a class="menu-card" href="/formulario">
+      <div class="icon">📋</div>
+      <div class="label">Actualización de Datos</div>
+      <div class="desc">Actualice su información personal, familiar y académica</div>
+    </a>
+    <a class="menu-card" href="/volantepago">
+      <div class="icon">💰</div>
+      <div class="label">Consulta Volante de Pago</div>
+      <div class="desc">Ver descuentos aplicados en nomina</div>
+    </a>
+  </div>
+</div>
+{% endblock %}

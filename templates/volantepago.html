@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Volante de Pago - PROPEEP{% endblock %}
+
+{% block content %}
+<body>
+    <div class="container">
+        <div class="table-container">
+            <h1 class="text-center">VOLANTE DE PAGO</h1>
+            
+            {% if empleado.error %}
+            <div class="alert alert-danger" style="margin-bottom: 1rem;">
+                ⚠️ Error: {{ empleado.error }}
+            </div>
+            {% elif not empleado %}
+            <div class="alert alert-warning" style="margin-bottom: 1rem;">
+                ⚠️ No se encontró información de empleado
+            </div>
+            {% else %}
+            
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th colspan="2" class="text-center">Datos Personales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Referencia:</td>
+                                <td>{{ empleado.get('REF', 'N/A') }}</td>
+                            </tr>
+                            <tr>
+                                <td>Documento:</td>
+                                <td>{{ empleado.get('documento', cedula) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Nombres:</td>
+                                <td>{{ empleado.get('nombres', 'N/A') }}</td>
+                            </tr>
+                            <tr>
+                                <td>Función:</td>
+                                <td>{{ empleado.get('funcion', 'N/A') }}</td>
+                            </tr>
+                            <tr>
+                                <td>Departamento:</td>
+                                <td>{{ empleado.get('DEPTO', 'N/A') }}</td>
+                            </tr>
+                            <tr>
+                                <td>Sexo:</td>
+                                <td>{{ empleado.get('Sexo', 'N/A') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-responsive" id="otros-datos">
+                    <table class="table table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th colspan="2" class="text-center">Descuento a Empleado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="left-column">Sueldo bruto :</td>
+                                <td class="right"><strong>${{ empleado.get('sueldo', '0.00')|currency_format }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Impuesto sobre la renta (ISR):</td>
+                                <td class="right-column">${{ empleado.get('ISR', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Seguridad social (AFP):</td>
+                                <td class="right-column">${{ empleado.get('AFP', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Seguro familiar de salud (SFS):</td>
+                                <td class="right-column">${{ empleado.get('SFS', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Subtotal TSS:</td>
+                                <td class="right-column">${{ empleado.get('SubTotalTSS', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Seguro:</td>
+                                <td class="right-column">${{ empleado.get('Seguro', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Total deducciones a empleado:</td>
+                                <td class="right-column">${{ empleado.get('DeducciónEmpleado', '0.00')|currency_format }}</td>
+                            </tr>
+
+                            <tr>
+                                <td class="left-column">Saldo a Favor:</td>
+                                <td class="right-column">${{ empleado.get('SaldoAFavor', '0.00')|currency_format }}</td>
+                            </tr>
+
+                            <tr>
+                                <td class="left-column">Sueldo neto:</td>
+                                <td class="right-column"><strong>${{ empleado.get('SueldoNeto', '0.00')|currency_format }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-responsive" id="aporte-patronales">
+                    <table class="table table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th colspan="2" class="text-center">Aportes Patronales (PAGADO POR PROPEEP)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="left-column">Seguridad social (AFP)</td>
+                                <td class="right-column">${{ empleado.get('AportesAFP', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Seguro familiar de salud (SFS)</td>
+                                <td class="right-column">${{ empleado.get('AportesSFS', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Riesgo laboral</td>
+                                <td class="right-column">${{ empleado.get('RiesgoLaboral', '0.00')|currency_format }}</td>
+                            </tr>
+                            <tr>
+                                <td class="left-column">Total aportes patronales:</td>
+                                <td class="right-column">${{ empleado.get('AportesPatronal', '0.00')|currency_format }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            
+            {% endif %}
+            
+        </div>
+    </div>
+</body>
+{% endblock %}
+</html>

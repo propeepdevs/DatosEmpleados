@@ -1,0 +1,758 @@
+{% extends "base.html" %}
+{% block title %}Actualización de Datos - PROPEEP{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:1.5rem">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:.82rem;color:var(--gray);margin-bottom:1rem">
+    <a href="/menu" style="color:var(--primary);text-decoration:none">🏠 Menú</a>
+    &nbsp;›&nbsp; Actualización de Datos
+  </div>
+
+  {% if error %}
+  <div class="alert alert-danger">⚠️ {{ error }}</div>
+  {% endif %}
+
+  {% if not id_emp %}
+  <div class="alert alert-info">
+    ℹ️ Usted no tiene registros previos. Complete el formulario para crear su expediente.
+  </div>
+  {% else %}
+  <div class="alert alert-success">
+    ✅ Registro encontrado. Puede actualizar sus datos a continuación.
+  </div>
+  {% endif %}
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-personal',this)">1. Datos Personales</button>
+    <button class="tab-btn" onclick="switchTab('tab-familiares',this)">2. Datos Familiares</button>
+    <button class="tab-btn" onclick="switchTab('tab-academicos',this)">3. Datos Académicos</button>
+  </div>
+
+  <!-- ══════════════ TAB 1: DATOS PERSONALES ══════════════ -->
+  <div id="tab-personal" class="tab-content active">
+
+    <!-- Bloque 1: Datos de Nómina (solo lectura) -->
+    <div class="card">
+      <div class="card-title">📌 Información de Nómina (solo lectura)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Cédula</label>
+          <input type="text" value="{{ session.cedula }}" readonly>
+        </div>
+        <div class="form-group">
+          <label>Nombre Completo</label>
+          <input type="text" value="{{ nomina.get('nombres','') }}" readonly>
+        </div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <input type="text" value="{{ nomina.get('DEPTO','') }}" readonly>
+        </div>
+        <div class="form-group">
+          <label>Cargo / Función</label>
+          <input type="text" value="{{ nomina.get('funcion','') }}" readonly>
+        </div>
+        <div class="form-group">
+          <label>Sexo</label>
+          <input type="text" value="{{ nomina.get('Sexo','') }}" readonly>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloque 2: Datos Complementarios -->
+    <div class="card">
+      <div class="card-title">👤 Datos Personales Complementarios</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Estado Civil *</label>
+          <select id="f-EstadoCivil">
+            <option value="">-- Seleccione --</option>
+            {% for op in ['Soltero(a)','Casado(a)','Viudo(a)','Unión libre','Divorciado(a)'] %}
+            <option value="{{ op }}" {% if empleado.get('EstadoCivil')==op %}selected{% endif %}>{{ op }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Teléfono Móvil *</label>
+          <input type="text" id="f-TelefonoMovil" placeholder="809-555-0000" maxlength="15"
+                 value="{{ empleado.get('TelefonoMovil','') }}">
+        </div>
+        <div class="form-group">
+          <label>Teléfono Casa</label>
+          <input type="text" id="f-TelefonoFijo" placeholder="809-555-0000" maxlength="15"
+                 value="{{ empleado.get('TelefonoFijo','') }}">
+        </div>
+        <div class="form-group">
+          <label>Teléfono Flota</label>
+          <input type="text" id="f-TelefonoFlota" placeholder="829-555-0000" maxlength="15"
+                 value="{{ empleado.get('TelefonoFlota','') }}">
+        </div>
+        <div class="form-group">
+          <label>Fecha de Nacimiento</label>
+          <input type="date" id="f-FechaNacimiento"
+                 value="{{ empleado.get('FechaNacimiento')|date_input }}">
+        </div>
+        <div class="form-group">
+          <label>Edad Calculada</label>
+          <input type="text" id="f-EdadCalculada" placeholder="Se calcula automáticamente" readonly style="background-color:#f5f5f5;">
+        </div>
+        <div class="form-group">
+          <label>Contacto de Emergencia</label>
+          <input type="text" id="f-ContactoEmergencia" placeholder="Nombre completo" maxlength="30"
+                 value="{{ empleado.get('ContactoEmergencia','') }}">
+        </div>
+        <div class="form-group">
+          <label>Teléfono de Emergencia</label>
+          <input type="text" id="f-TelefonoEmergencia" placeholder="809-555-0000" maxlength="15"
+                 value="{{ empleado.get('TelefonoEmergencia','') }}">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-Email" placeholder="usuario@ejemplo.com" maxlength="100"
+                 value="{{ empleado.get('Email','') }}">
+        </div>
+        <div class="form-group">
+          <label>Email Personal</label>
+          <input type="email" id="f-EmailPersonal" placeholder="usuario@ejemplo.com" maxlength="200"
+                 value="{{ empleado.get('EmailPersonal','') }}">
+        </div>
+        <div class="form-group">
+          <label>Supervisor(a)</label>
+          <input type="text" id="f-Supervisor" placeholder="Nombre del supervisor" maxlength="50"
+                 value="{{ empleado.get('Supervisor','') }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloque 3: Localidad -->
+    <div class="card">
+      <div class="card-title">📍 Datos de Localidad</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Provincia *</label>
+          <select id="f-Provincia">
+            <option value="">-- Seleccione --</option>
+            {% for p in ['Azua','Bahoruco','Barahona','Dajabón','Distrito Nacional','Duarte','El Seibo',
+               'Elías Piña','Espaillat','Hato Mayor','Hermanas Mirabal','Independencia','La Altagracia',
+               'La Romana','La Vega','María Trinidad Sánchez','Monseñor Nouel','Monte Cristi',
+               'Monte Plata','Pedernales','Peravia','Puerto Plata','Samaná','San Cristóbal',
+               'San José de Ocoa','San Juan','San Pedro de Macorís','Sánchez Ramírez',
+               'Santiago','Santiago Rodríguez','Santo Domingo','Valverde'] %}
+            <option value="{{ p }}" {% if empleado.get('Provincia')==p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Municipio *</label>
+          <input type="text" id="f-Municipio" placeholder="Municipio" maxlength="30"
+                 value="{{ empleado.get('Municipio','') }}">
+        </div>
+        <div class="form-group full">
+          <label>Dirección *</label>
+          <input type="text" id="f-Direccion" placeholder="Calle, número, edificio, apto..." maxlength="100"
+                 value="{{ empleado.get('Direccion','') }}">
+        </div>
+        <div class="form-group full">
+          <label>Observación</label>
+          <textarea id="f-Observacion" placeholder="Notas adicionales..." maxlength="255" style="resize:vertical;min-height:60px;">{{ empleado.get('Observacion','') }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Sector</label>
+          <input type="text" id="f-Sector" placeholder="Sector / Barrio" maxlength="100"
+                 value="{{ empleado.get('Sector','') }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloque 4: Nivel Académico -->
+    <div class="card">
+      <div class="card-title">🎓 Nivel Académico</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nivel Académico Alcanzado</label>
+          <select id="f-NivelAcademico">
+            <option value="">-- Seleccione --</option>
+            {% for n in ['Primaria','Secundaria','Universitario','Maestría','Doctorado','Técnico','Ninguno'] %}
+            <option value="{{ n }}" {% if empleado.get('NivelAcademico')==n %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Profesión u Oficio</label>
+          <input type="text" id="f-ProfesionOficio" placeholder="Ej: Ingeniero de Sistemas" maxlength="30"
+                 value="{{ empleado.get('ProfesionOficio','') }}">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:1rem;justify-content:flex-end;margin-bottom:1.5rem">
+      <a href="/menu" class="btn btn-outline">← Volver al Menú</a>
+      <button class="btn btn-primary" onclick="guardarEmpleado()">💾 Guardar Datos Personales</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB 2: FAMILIARES ══════════════ -->
+  <div id="tab-familiares" class="tab-content">
+    <div class="card">
+      <div class="card-title">👨‍👩‍👧 Datos Familiares</div>
+
+      {% if not id_emp %}
+      <div class="alert alert-info">Primero guarde sus datos personales para poder agregar familiares.</div>
+      {% else %}
+      <div style="margin-bottom:1rem">
+        <button class="btn btn-accent" onclick="abrirModalFamiliar()">➕ Agregar Familiar</button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="tbl-familiares">
+          <thead>
+            <tr>
+              <th>Cédula</th><th>Nombre</th><th>Sexo</th><th>F. Nacimiento</th>
+              <th>Edad</th><th>Parentesco</th><th>Estudia</th><th>Tipo</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in familiares %}
+            <tr id="fam-{{ f.Id }}">
+              <td>{{ f.Cedula or '' }}</td>
+              <td>{{ f.Nombre }}</td>
+              <td>{{ f.Sexo }}</td>
+              <td>{{ f.FechaNacimiento.strftime('%d/%m/%Y') if f.FechaNacimiento else '' }}</td>
+              <td>{{ f.Edad or '' }}</td>
+              <td>{{ f.Parentesco or '' }}</td>
+              <td>{{ 'Sí' if f.Estudia else 'No' }}</td>
+              <td>{{ f.TipoEstudio or '' }}</td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-outline btn-sm" onclick='editarFamiliar({{f|tojson}})'>✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="eliminarFamiliar({{ f.Id }})">🗑️</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB 3: ACADÉMICOS ══════════════ -->
+  <div id="tab-academicos" class="tab-content">
+    <div class="card">
+      <div class="card-title">📜 Datos Académicos</div>
+
+      {% if not id_emp %}
+      <div class="alert alert-info">Primero guarde sus datos personales para poder agregar títulos académicos.</div>
+      {% else %}
+      <div style="margin-bottom:1rem">
+        <button class="btn btn-accent" onclick="abrirModalAcademico()">➕ Agregar Título</button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="tbl-academicos">
+          <thead>
+            <tr><th>Título</th><th>Institución</th><th>Fecha</th><th>Acciones</th></tr>
+          </thead>
+          <tbody>
+            {% for a in academicos %}
+            <tr id="acad-{{ a.Id }}">
+              <td>{{ a.Titulo }}</td>
+              <td>{{ a.Institucion or '' }}</td>
+              <td>{{ a.Fecha.strftime('%d/%m/%Y') if a.Fecha else '' }}</td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-outline btn-sm" onclick='editarAcademico({{ a|tojson }})'>✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="eliminarAcademico({{ a.Id }})">🗑️</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL FAMILIAR ══════════ -->
+<div class="modal-overlay" id="modal-familiar">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-fam-title">Agregar Familiar</span>
+      <button class="modal-close" onclick="cerrarModal('modal-familiar')">✕</button>
+    </div>
+    <input type="hidden" id="fam-id">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Cédula del Familiar</label>
+        <input type="text" id="fam-Cedula" placeholder="Opcional" maxlength="13">
+      </div>
+      <div class="form-group">
+        <label>Nombre Completo *</label>
+        <input type="text" id="fam-Nombre" placeholder="Nombre y apellido" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label>Sexo *</label>
+        <select id="fam-Sexo">
+          <option value="">-- Seleccione --</option>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha de Nacimiento</label>
+        <input type="date" id="fam-FechaNacimiento">
+      </div>
+      <div class="form-group">
+        <label>Edad</label>
+        <input type="number" id="fam-Edad" min="0" max="120" placeholder="Años">
+      </div>
+      <div class="form-group">
+        <label>Parentesco *</label>
+        <select id="fam-Parentesco">
+          <option value="">-- Seleccione --</option>
+          {% for p in ['Hijo(a)','Esposo(a)','Madre','Padre','Hermano(a)','Abuelo(a)','Otro'] %}
+          <option value="{{ p }}">{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>¿Estudia?</label>
+        <select id="fam-Estudia">
+          <option value="0">No</option>
+          <option value="1">Sí</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Estudio</label>
+        <select id="fam-TipoEstudio">
+          <option value="">-- N/A --</option>
+          <option value="Público">Público</option>
+          <option value="Privado">Privado</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:.8rem;margin-top:1.2rem">
+      <button class="btn btn-outline" onclick="cerrarModal('modal-familiar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarFamiliar()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL ACADÉMICO ══════════ -->
+<div class="modal-overlay" id="modal-academico">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-acad-title">Agregar Título Académico</span>
+      <button class="modal-close" onclick="cerrarModal('modal-academico')">✕</button>
+    </div>
+    <input type="hidden" id="acad-id">
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Título Obtenido *</label>
+        <input type="text" id="acad-Titulo" placeholder="Ej: Licenciatura en Administración" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label>Institución</label>
+        <input type="text" id="acad-Institucion" placeholder="Universidad / Centro educativo" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label>Fecha de Graduación *</label>
+        <input type="date" id="acad-Fecha">
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:.8rem;margin-top:1.2rem">
+      <button class="btn btn-outline" onclick="cerrarModal('modal-academico')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarAcademico()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ID_EMP = {{ id_emp or 'null' }};
+  let currentIdEmp = ID_EMP;
+
+  /* ── TABS ── */
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  /* ── MODALS ── */
+  function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+  function abrirModal(id)  { document.getElementById(id).classList.add('active'); }
+
+  /* ── API HELPER ── */
+  async function api(url, method, data) {
+    const res = await fetch(url, {
+      method, headers: {'Content-Type':'application/json'},
+      body: data ? JSON.stringify(data) : undefined
+    });
+    return res.json();
+  }
+
+  /* ════════ EMPLEADO ════════ */
+  function validarEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  }
+
+  async function guardarEmpleado() {
+    const email = val('f-Email');
+    const emailPersonal = val('f-EmailPersonal');
+    
+    // Validar email si está proporcionado
+    if (email && !validarEmail(email)) {
+      toast('⚠️ Ingrese un correo electrónico válido en Email (ej: usuario@ejemplo.com)', true);
+      return;
+    }
+
+    // Validar email personal si está proporcionado
+    if (emailPersonal && !validarEmail(emailPersonal)) {
+      toast('⚠️ Ingrese un correo electrónico válido en Email Personal (ej: usuario@ejemplo.com)', true);
+      return;
+    }
+
+    const data = {
+      EstadoCivil:        val('f-EstadoCivil'),
+      TelefonoMovil:      val('f-TelefonoMovil').replace(/\D/g, ''), // Solo números
+      TelefonoFijo:       val('f-TelefonoFijo').replace(/\D/g, ''),
+      TelefonoFlota:      val('f-TelefonoFlota').replace(/\D/g, ''),
+      ContactoEmergencia: val('f-ContactoEmergencia'),
+      TelefonoEmergencia: val('f-TelefonoEmergencia').replace(/\D/g, ''),
+      NivelAcademico:     val('f-NivelAcademico'),
+      ProfesionOficio:    val('f-ProfesionOficio'),
+      Provincia:          val('f-Provincia'),
+      Municipio:          val('f-Municipio'),
+      Direccion:          val('f-Direccion'),
+      Sector:             val('f-Sector'),
+      FechaNacimiento:    val('f-FechaNacimiento'),
+      Email:              email,
+      EmailPersonal:      emailPersonal,
+      Observacion:        val('f-Observacion'),
+      Supervisor:         val('f-Supervisor'),
+    };
+    if (!data.TelefonoMovil || !data.Direccion || !data.EstadoCivil) {
+      toast('Complete los campos requeridos (*)', true); return;
+    }
+    const r = await api('/empleado/guardar','POST', data);
+    if (r.ok) {
+      currentIdEmp = r.id_emp;
+      toast('✅ Datos guardados correctamente');
+    } else {
+      toast('❌ Error: ' + r.msg, true);
+    }
+  }
+
+  /* ── FORMATEO DE TELÉFONOS ── */
+  function formatearTelefono(valor) {
+    // Remover todo excepto números
+    let nums = valor.replace(/\D/g, '');
+    
+    // Limitar a 10 dígitos
+    if (nums.length > 10) {
+      nums = nums.substring(0, 10);
+    }
+    
+    // Aplicar formato XXX-XXX-XXXX
+    if (nums.length >= 4) {
+      if (nums.length >= 7) {
+        return nums.substring(0, 3) + '-' + nums.substring(3, 6) + '-' + nums.substring(6, 10);
+      } else {
+        return nums.substring(0, 3) + '-' + nums.substring(3);
+      }
+    }
+    return nums;
+  }
+
+  /* ════════ FAMILIARES ════════ */
+  function abrirModalFamiliar(reset=true) {
+    if (reset) {
+      ['fam-id','fam-Cedula','fam-Nombre','fam-Edad'].forEach(i => setVal(i,''));
+      ['fam-Sexo','fam-Parentesco','fam-TipoEstudio'].forEach(i => setVal(i,''));
+      setVal('fam-FechaNacimiento','');
+      setVal('fam-Estudia','0');
+      document.getElementById('modal-fam-title').textContent = 'Agregar Familiar';
+    }
+    abrirModal('modal-familiar');
+    // Vincular el listener después de abrir el modal
+    setTimeout(function() {
+      const inputFecha = document.getElementById('fam-FechaNacimiento');
+      if (inputFecha) {
+        inputFecha.onchange = function() {
+          const edad = calcularEdad(this.value);
+          if (edad) setVal('fam-Edad', edad);
+        };
+      }
+    }, 50);
+  }
+
+  function editarFamiliar(f) {
+    setVal('fam-id', f.Id);
+    setVal('fam-Cedula', f.Cedula || '');
+    setVal('fam-Nombre', f.Nombre || '');
+    setVal('fam-Sexo', f.Sexo || '');
+    // Formatear fecha correctamente
+    let fechaNac = '';
+    if (f.FechaNacimiento) {
+      if (typeof f.FechaNacimiento === 'string') {
+        fechaNac = f.FechaNacimiento.substring(0, 10);
+      } else {
+        fechaNac = f.FechaNacimiento;
+      }
+    }
+    setVal('fam-FechaNacimiento', fechaNac);
+    setVal('fam-Parentesco', f.Parentesco || '');
+    setVal('fam-Estudia', f.Estudia ? '1' : '0');
+    setVal('fam-TipoEstudio', f.TipoEstudio || '');
+    // Calcular edad automáticamente basado en la fecha de nacimiento
+    const edadCalculada = calcularEdad(fechaNac);
+    setVal('fam-Edad', edadCalculada || f.Edad || '');
+    document.getElementById('modal-fam-title').textContent = 'Editar Familiar';
+    abrirModal('modal-familiar');
+  }
+
+  async function guardarFamiliar() {
+    const nombre = val('fam-Nombre');
+    if (!nombre) { toast('El nombre es requerido', true); return; }
+    const data = {
+      Id:              val('fam-id') || null,
+      IdDatosEmpleado: currentIdEmp,
+      Cedula:          val('fam-Cedula'),
+      Nombre:          nombre,
+      Sexo:            val('fam-Sexo'),
+      FechaNacimiento: val('fam-FechaNacimiento'),
+      Edad:            val('fam-Edad') || null,
+      Parentesco:      val('fam-Parentesco'),
+      Estudia:         val('fam-Estudia') === '1',
+      TipoEstudio:     val('fam-TipoEstudio'),
+    };
+    const r = await api('/familiar/guardar','POST', data);
+    if (r.ok) {
+      toast('✅ Familiar guardado'); 
+      cerrarModal('modal-familiar');
+      // Actualizar tabla sin recargar la página
+      setTimeout(() => recargarTablaFamiliares(), 500);
+    } else {
+      toast('❌ ' + r.msg, true);
+    }
+  }
+
+  async function recargarTablaFamiliares() {
+    try {
+      const res = await fetch(`/formulario`);
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const newTable = doc.getElementById('tbl-familiares');
+      if (newTable) {
+        document.getElementById('tbl-familiares').innerHTML = newTable.innerHTML;
+      }
+    } catch (e) {
+      console.error('Error recargando tabla:', e);
+    }
+  }
+
+  async function eliminarFamiliar(id) {
+    if (!confirm('¿Eliminar este familiar?')) return;
+    const r = await api(`/familiar/eliminar/${id}`, 'DELETE');
+    if (r.ok) { document.getElementById('fam-'+id)?.remove(); toast('Familiar eliminado'); }
+    else toast('❌ ' + r.msg, true);
+  }
+
+  /* ════════ ACADÉMICOS ════════ */
+  function abrirModalAcademico(reset=true) {
+    if (reset) {
+      ['acad-id','acad-Titulo','acad-Institucion','acad-Fecha'].forEach(i => setVal(i,''));
+      document.getElementById('modal-acad-title').textContent = 'Agregar Título Académico';
+    }
+    abrirModal('modal-academico');
+  }
+
+  function editarAcademico(a) {
+    setVal('acad-id', a.Id);
+    setVal('acad-Titulo', a.Titulo || '');
+    setVal('acad-Institucion', a.Institucion || '');
+    setVal('acad-Fecha', a.Fecha ? a.Fecha.substring(0,10) : '');
+    document.getElementById('modal-acad-title').textContent = 'Editar Título';
+    abrirModal('modal-academico');
+  }
+
+  async function guardarAcademico() {
+    const titulo = val('acad-Titulo');
+    const fecha  = val('acad-Fecha');
+    if (!titulo || !fecha) { toast('Título y fecha son requeridos', true); return; }
+    const data = {
+      Id:              val('acad-id') || null,
+      IdDatosEmpleado: currentIdEmp,
+      Titulo:          titulo,
+      Institucion:     val('acad-Institucion'),
+      Fecha:           fecha,
+    };
+    const r = await api('/academico/guardar','POST', data);
+    if (r.ok) {
+      toast('✅ Título académico guardado'); 
+      cerrarModal('modal-academico');
+      // Actualizar tabla sin recargar la página
+      setTimeout(() => recargarTablaAcademicos(), 500);
+    } else {
+      toast('❌ ' + r.msg, true);
+    }
+  }
+
+  async function recargarTablaAcademicos() {
+    try {
+      const res = await fetch(`/formulario`);
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const newTable = doc.getElementById('tbl-academicos');
+      if (newTable) {
+        document.getElementById('tbl-academicos').innerHTML = newTable.innerHTML;
+      }
+    } catch (e) {
+      console.error('Error recargando tabla:', e);
+    }
+  }
+
+  async function eliminarAcademico(id) {
+    if (!confirm('¿Eliminar este título académico?')) return;
+    const r = await api(`/academico/eliminar/${id}`, 'DELETE');
+    if (r.ok) { document.getElementById('acad-'+id)?.remove(); toast('Título eliminado'); }
+    else toast('❌ ' + r.msg, true);
+  }
+
+  /* ── HELPERS ── */
+  function val(id)       { return document.getElementById(id)?.value ?? ''; }
+  function setVal(id, v) { const el = document.getElementById(id); if(el) el.value = v; }
+
+  /* ── CÁLCULO DE EDAD ── */
+  function calcularEdad(fechaNacimiento) {
+    if (!fechaNacimiento) return '';
+    try {
+      const hoy = new Date();
+      const fecha = new Date(fechaNacimiento);
+      
+      // Validar que la fecha sea válida
+      if (isNaN(fecha.getTime())) return '';
+      
+      let edad = hoy.getFullYear() - fecha.getFullYear();
+      const mes = hoy.getMonth() - fecha.getMonth();
+      if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+        edad--;
+      }
+      return edad >= 0 ? edad : '';
+    } catch (e) {
+      console.error('Error calculando edad:', e);
+      return '';
+    }
+  }
+
+  // Listeners para calcular edad automáticamente
+  document.addEventListener('DOMContentLoaded', function() {
+    // Listener para datos personales
+    const inputFechaPersonal = document.getElementById('f-FechaNacimiento');
+    if (inputFechaPersonal) {
+      inputFechaPersonal.addEventListener('change', function() {
+        const edad = calcularEdad(this.value);
+        setVal('f-EdadCalculada', edad);
+      });
+    }
+    
+    // Listener para modal de familiares
+    const inputFechaFamiliar = document.getElementById('fam-FechaNacimiento');
+    if (inputFechaFamiliar) {
+      inputFechaFamiliar.addEventListener('change', function() {
+        const edad = calcularEdad(this.value);
+        if (edad) setVal('fam-Edad', edad);
+      });
+    }
+
+    // Listeners para formatear teléfonos en datos personales
+    const telefonoMovil = document.getElementById('f-TelefonoMovil');
+    if (telefonoMovil) {
+      telefonoMovil.addEventListener('input', function() {
+        this.value = formatearTelefono(this.value);
+      });
+    }
+
+    const telefonoFijo = document.getElementById('f-TelefonoFijo');
+    if (telefonoFijo) {
+      telefonoFijo.addEventListener('input', function() {
+        this.value = formatearTelefono(this.value);
+      });
+    }
+
+    const telefonoFlota = document.getElementById('f-TelefonoFlota');
+    if (telefonoFlota) {
+      telefonoFlota.addEventListener('input', function() {
+        this.value = formatearTelefono(this.value);
+      });
+    }
+
+    const telefonoEmergencia = document.getElementById('f-TelefonoEmergencia');
+    if (telefonoEmergencia) {
+      telefonoEmergencia.addEventListener('input', function() {
+        this.value = formatearTelefono(this.value);
+      });
+    }
+    
+    // Calcular edad inicial si existe fecha
+    calcularEdadAlCargar();
+  });
+
+  // Calcular edad al cargar la página si hay fecha de nacimiento en datos personales
+  function calcularEdadAlCargar() {
+    setTimeout(function() {
+      const fechaPersonal = val('f-FechaNacimiento');
+      if (fechaPersonal) {
+        const edad = calcularEdad(fechaPersonal);
+        if (edad !== '') {
+          setVal('f-EdadCalculada', edad);
+        }
+      }
+
+      // Formatear teléfonos guardados al cargar la página
+      const telefonoMovil = document.getElementById('f-TelefonoMovil');
+      if (telefonoMovil && telefonoMovil.value) {
+        telefonoMovil.value = formatearTelefono(telefonoMovil.value);
+      }
+
+      const telefonoFijo = document.getElementById('f-TelefonoFijo');
+      if (telefonoFijo && telefonoFijo.value) {
+        telefonoFijo.value = formatearTelefono(telefonoFijo.value);
+      }
+
+      const telefonoFlota = document.getElementById('f-TelefonoFlota');
+      if (telefonoFlota && telefonoFlota.value) {
+        telefonoFlota.value = formatearTelefono(telefonoFlota.value);
+      }
+
+      const telefonoEmergencia = document.getElementById('f-TelefonoEmergencia');
+      if (telefonoEmergencia && telefonoEmergencia.value) {
+        telefonoEmergencia.value = formatearTelefono(telefonoEmergencia.value);
+      }
+    }, 200);
+  }
+
+  // Ejecutar en múltiples eventos para asegurar que funcione
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', calcularEdadAlCargar);
+  } else {
+    calcularEdadAlCargar();
+  }
+  
+  window.addEventListener('load', calcularEdadAlCargar);
+  
+  // Ejecutar inmediatamente también
+  calcularEdadAlCargar();
+
+  /* Cerrar modal al click fuera */
+  document.querySelectorAll('.modal-overlay').forEach(o =>
+    o.addEventListener('click', e => { if(e.target === o) o.classList.remove('active'); })
+  );
+</script>
+{% endblock %}
