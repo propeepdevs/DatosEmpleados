@@ -124,6 +124,7 @@ def menu():
 
 # ─────────────────────────── DATOS EMPLEADO ─────────────────
 
+
 @app.route('/formulario', methods=['GET'])
 def formulario():
     if 'cedula' not in session:
