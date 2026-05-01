@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import pyodbc
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify 
+import pymssql 
 from datetime import datetime
 import os
 
@@ -47,24 +47,20 @@ def format_date_input(value):
 DB_CONFIG = {
     'server': 'h7dxy4lo9g.database.windows.net',
     'database': 'dbformularios',
-    'username': 'qacusuario',
-    'password': 'h7IpBZG8^#Ni',
-    'driver': '{ODBC Driver 17 for SQL Server}'
+    'username': 'serviciospropeep',
+    'password': 'servicios2024@'
 }
 
 def get_conn():
-    conn_str = (
-        f"DRIVER={DB_CONFIG['driver']};"
-        f"SERVER={DB_CONFIG['server']};"
-        f"DATABASE={DB_CONFIG['database']};"
-        f"UID={DB_CONFIG['username']};"
-        f"PWD={DB_CONFIG['password']};"
-        "TrustServerCertificate=yes;"
+    return pymssql.connect(
+        server=DB_CONFIG['server'],
+        database=DB_CONFIG['database'],
+        user=DB_CONFIG['username'],
+        password=DB_CONFIG['password']
     )
-    return pyodbc.connect(conn_str)
 
 def get_cursor(conn):
-    return conn.cursor()
+    return conn.cursor(as_dict=True)
 
 # ─────────────────────────── AUTH ───────────────────────────
 
@@ -79,17 +75,17 @@ def login():
             cur  = get_cursor(conn)
             cur.execute(
                 "SELECT documento, nombres, ctabanco,'activo' as Estatus FROM dbo.ConsultaNomina "
-                "WHERE documento = ? AND ctabanco = ?",
+                "WHERE documento = %s AND ctabanco = %s",
                 (cedula, clave)
             )
             row = cur.fetchone()
             if not row:
                 error = "Cédula o clave incorrecta. Verifique sus datos."
-            elif str(row.Estatus).strip() in ('0', 'Inactivo', 'inactivo', 'N', 'False', 'false'):
+            elif str(row['Estatus']).strip() in ('0', 'Inactivo', 'inactivo', 'N', 'False', 'false'):
                 error = "Su usuario está inactivo. Comuníquese con Recursos Humanos."
             else:
-                session['cedula']  = row.documento
-                session['nombre']  = row.nombres
+                session['cedula']  = row['documento']
+                session['nombre']  = row['nombres']
                 conn.close()
                 return redirect(url_for('menu'))
             conn.close()
@@ -113,17 +109,16 @@ def menu():
     try:
         conn = get_conn()
         cur  = get_cursor(conn)
-        cur.execute("SELECT DEPTO FROM dbo.ConsultaNomina WHERE documento = ?", (cedula,))
+        cur.execute("SELECT DEPTO FROM dbo.ConsultaNomina WHERE documento = %s", (cedula,))
         row = cur.fetchone()
         if row:
-            depto = row.DEPTO or ''
+            depto = row['DEPTO'] or ''
         conn.close()
     except Exception:
         pass
     return render_template('menu.html', nombre=session.get('nombre',''), depto=depto)
 
 # ─────────────────────────── DATOS EMPLEADO ─────────────────
-
 
 @app.route('/formulario', methods=['GET'])
 def formulario():
@@ -142,30 +137,27 @@ def formulario():
 
         # Nomina (read-only fields)
         cur.execute(
-            "SELECT nombres, funcion, DEPTO, Sexo FROM dbo.ConsultaNomina WHERE documento = ?",
+            "SELECT nombres, funcion, DEPTO, Sexo FROM dbo.ConsultaNomina WHERE documento = %s",
             (cedula,)
         )
         n = cur.fetchone()
         if n:
-            nomina = {'nombres': n.nombres, 'funcion': n.funcion, 'DEPTO': n.DEPTO, 'Sexo': n.Sexo}
+            nomina = {'nombres': n['nombres'], 'funcion': n['funcion'], 'DEPTO': n['DEPTO'], 'Sexo': n['Sexo']}
 
         # DatosEmpleado
-        cur.execute("SELECT * FROM rrhh.DatosEmpleados WHERE Cedula = ?", (cedula,))
-        cols = [c[0] for c in cur.description]
+        cur.execute("SELECT * FROM rrhh.DatosEmpleados WHERE Cedula = %s", (cedula,))
         row  = cur.fetchone()
         if row:
-            empleado = dict(zip(cols, row))
+            empleado = row
             id_emp   = empleado.get('Id')
 
             # Familiares
-            cur.execute("SELECT * FROM rrhh.DatosFamiliares WHERE IdDatosEmpleado = ?", (id_emp,))
-            f_cols = [c[0] for c in cur.description]
-            familiares = [dict(zip(f_cols, r)) for r in cur.fetchall()]
+            cur.execute("SELECT * FROM rrhh.DatosFamiliares WHERE IdDatosEmpleado = %s", (id_emp,))
+            familiares = cur.fetchall()
 
             # Academicos
-            cur.execute("SELECT * FROM rrhh.DatosAcademicos WHERE IdDatosEmpleado = ?", (id_emp,))
-            a_cols = [c[0] for c in cur.description]
-            academicos = [dict(zip(a_cols, r)) for r in cur.fetchall()]
+            cur.execute("SELECT * FROM rrhh.DatosAcademicos WHERE IdDatosEmpleado = %s", (id_emp,))
+            academicos = cur.fetchall()
 
         conn.close()
     except Exception as e:
@@ -186,44 +178,45 @@ def empleado_guardar():
     try:
         conn = get_conn()
         cur  = get_cursor(conn)
-        cur.execute("SELECT Id FROM rrhh.DatosEmpleados WHERE Cedula = ?", (cedula,))
+        cur.execute("SELECT Id FROM rrhh.DatosEmpleados WHERE Cedula = %s", (cedula,))
         row = cur.fetchone()
         if row:
             cur.execute("""
                 UPDATE rrhh.DatosEmpleados SET
-                    EstadoCivil=?, TelefonoMovil=?, TelefonoFijo=?, TelefonoFlota=?,
-                    ContactoEmergencia=?, TelefonoEmergencia=?,
-                    NivelAcademico=?, ProfesionOficio=?,
-                    Provincia=?, Municipio=?, Direccion=?, Sector=?,
-                    FechaNacimiento=?, Email=?, Supervisor=?,
-                    ModificadoPor=?, FechaModificado=?
-                WHERE Cedula=?
+                    EstadoCivil=%s, TelefonoMovil=%s, TelefonoFijo=%s, TelefonoFlota=%s,
+                    ContactoEmergencia=%s, TelefonoEmergencia=%s,
+                    NivelAcademico=%s, ProfesionOficio=%s,
+                    Provincia=%s, Municipio=%s, Direccion=%s, Sector=%s,
+                    FechaNacimiento=%s, Email=%s, EmailPersonal=%s, Supervisor=%s,
+                    ModificadoPor=%s, FechaModificado=%s
+                WHERE Cedula=%s
             """, (
                 d.get('EstadoCivil'), d.get('TelefonoMovil'), d.get('TelefonoFijo'),
                 d.get('TelefonoFlota'), d.get('ContactoEmergencia'), d.get('TelefonoEmergencia'),
                 d.get('NivelAcademico'), d.get('ProfesionOficio'),
                 d.get('Provincia'), d.get('Municipio'), d.get('Direccion'), d.get('Sector'),
-                d.get('FechaNacimiento') or None, d.get('Email'), d.get('Supervisor'),
+                d.get('FechaNacimiento') or None, d.get('Email'), d.get('EmailPersonal'), d.get('Supervisor'),
                 user, now, cedula
             ))
-            cur.execute("SELECT Id FROM rrhh.DatosEmpleados WHERE Cedula = ?", (cedula,))
-            id_emp = cur.fetchone()[0]
+            cur.execute("SELECT Id FROM rrhh.DatosEmpleados WHERE Cedula = %s", (cedula,))
+            row_id = cur.fetchone()
+            id_emp = row_id['Id'] if row_id else None
         else:
             # Get nombre/sexo from nomina
-            cur.execute("SELECT nombres, Sexo, funcion, DEPTO FROM dbo.ConsultaNomina WHERE documento=?", (cedula,))
+            cur.execute("SELECT nombres, Sexo, funcion, DEPTO FROM dbo.ConsultaNomina WHERE documento=%s", (cedula,))
             n = cur.fetchone()
-            nombre = n.nombres if n else ''
-            sexo   = n.Sexo if n else ''
-            cargo  = n.funcion if n else ''
-            depto  = n.DEPTO if n else ''
+            nombre = n['nombres'] if n else ''
+            sexo   = n['Sexo'] if n else ''
+            cargo  = n['funcion'] if n else ''
+            depto  = n['DEPTO'] if n else ''
             cur.execute("""
                 INSERT INTO rrhh.DatosEmpleados
                     (Cedula, Nombre, Sexo, EstadoCivil, TelefonoMovil, TelefonoFijo, TelefonoFlota,
                      ContactoEmergencia, TelefonoEmergencia, Departamento, Cargo,
                      NivelAcademico, ProfesionOficio,
-                     Provincia, Municipio, Direccion, Sector, FechaNacimiento, Email, Supervisor, Estatus,
+                     Provincia, Municipio, Direccion, Sector, FechaNacimiento, Email, EmailPersonal, Supervisor, Estatus,
                      FechaRegistro, RegistradoPor, FechaModificado)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1,%s,%s,%s)
             """, (
                 cedula, nombre, sexo,
                 d.get('EstadoCivil'), d.get('TelefonoMovil'), d.get('TelefonoFijo'),
@@ -231,11 +224,12 @@ def empleado_guardar():
                 depto, cargo,
                 d.get('NivelAcademico'), d.get('ProfesionOficio'),
                 d.get('Provincia'), d.get('Municipio'), d.get('Direccion'), d.get('Sector'),
-                d.get('FechaNacimiento') or None, d.get('Email'), d.get('Supervisor'),
+                d.get('FechaNacimiento') or None, d.get('Email'), d.get('EmailPersonal'), d.get('Supervisor'),
                 now, user, now
             ))
-            cur.execute("SELECT Id FROM rrhh.DatosEmpleados WHERE Cedula = ?", (cedula,))
-            id_emp = cur.fetchone()[0]
+            cur.execute("SELECT Id FROM rrhh.DatosEmpleados WHERE Cedula = %s", (cedula,))
+            row_id = cur.fetchone()
+            id_emp = row_id['Id'] if row_id else None
 
         conn.commit()
         conn.close()
@@ -257,10 +251,10 @@ def familiar_guardar():
         if d.get('Id'):
             cur.execute("""
                 UPDATE rrhh.DatosFamiliares SET
-                    Cedula=?, Nombre=?, Sexo=?, FechaNacimiento=?, Edad=?,
-                    Parentesco=?, Estudia=?, TipoEstudio=?,
-                    ModificadoPor=?, FechaModificado=?
-                WHERE Id=?
+                    Cedula=%s, Nombre=%s, Sexo=%s, FechaNacimiento=%s, Edad=%s,
+                    Parentesco=%s, Estudia=%s, TipoEstudio=%s,
+                    ModificadoPor=%s, FechaModificado=%s
+                WHERE Id=%s
             """, (
                 d.get('Cedula'), d.get('Nombre'), d.get('Sexo'),
                 d.get('FechaNacimiento') or None,
@@ -274,7 +268,7 @@ def familiar_guardar():
                     (IdDatosEmpleado, Cedula, Nombre, Sexo, FechaNacimiento, Edad,
                      Parentesco, Estudia, TipoEstudio,
                      FechaRegistro, RegistradoPor, FechaModificado)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """, (
                 d.get('IdDatosEmpleado'),
                 d.get('Cedula'), d.get('Nombre'), d.get('Sexo'),
@@ -296,7 +290,7 @@ def familiar_eliminar(fid):
     try:
         conn = get_conn()
         cur  = get_cursor(conn)
-        cur.execute("DELETE FROM rrhh.DatosFamiliares WHERE Id = ?", (fid,))
+        cur.execute("DELETE FROM rrhh.DatosFamiliares WHERE Id = %s", (fid,))
         conn.commit()
         conn.close()
         return jsonify({'ok': True})
@@ -317,9 +311,9 @@ def academico_guardar():
         if d.get('Id'):
             cur.execute("""
                 UPDATE rrhh.DatosAcademicos SET
-                    Titulo=?, Institucion=?, Fecha=?,
-                    ModificadoPor=?, FechaModificado=?
-                WHERE Id=?
+                    Titulo=%s, Institucion=%s, Fecha=%s,
+                    ModificadoPor=%s, FechaModificado=%s
+                WHERE Id=%s
             """, (
                 d.get('Titulo'), d.get('Institucion'),
                 d.get('Fecha') or None,
@@ -330,7 +324,7 @@ def academico_guardar():
                 INSERT INTO rrhh.DatosAcademicos
                     (IdDatosEmpleado, Titulo, Institucion, Fecha,
                      FechaRegistro, RegistradoPor, FechaModificado)
-                VALUES (?,?,?,?,?,?,?)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)
             """, (
                 d.get('IdDatosEmpleado'),
                 d.get('Titulo'), d.get('Institucion'),
@@ -350,7 +344,7 @@ def academico_eliminar(aid):
     try:
         conn = get_conn()
         cur  = get_cursor(conn)
-        cur.execute("DELETE FROM rrhh.DatosAcademicos WHERE Id = ?", (aid,))
+        cur.execute("DELETE FROM rrhh.DatosAcademicos WHERE Id = %s", (aid,))
         conn.commit()
         conn.close()
         return jsonify({'ok': True})
@@ -368,11 +362,10 @@ def volantepago():
     try:
         conn = get_conn()
         cur  = get_cursor(conn)
-        cur.execute("SELECT * FROM dbo.consultanomina WHERE documento = ?", (cedula,))
-        cols = [c[0] for c in cur.description] if cur.description else []
+        cur.execute("SELECT * FROM dbo.consultanomina WHERE documento = %s", (cedula,))
         row  = cur.fetchone()
         if row:
-            empleado = dict(zip(cols, row))
+            empleado = row
         conn.close()
     except Exception as e:
         empleado = {'error': str(e)}

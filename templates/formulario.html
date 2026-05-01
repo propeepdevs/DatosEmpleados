@@ -109,7 +109,7 @@
                  value="{{ empleado.get('TelefonoEmergencia','') }}">
         </div>
         <div class="form-group">
-          <label>Email</label>
+          <label>Email PROPEEP</label>
           <input type="email" id="f-Email" placeholder="usuario@ejemplo.com" maxlength="100"
                  value="{{ empleado.get('Email','') }}">
         </div>
@@ -432,8 +432,8 @@
       Direccion:          val('f-Direccion'),
       Sector:             val('f-Sector'),
       FechaNacimiento:    val('f-FechaNacimiento'),
-      Email:              email,
-      EmailPersonal:      emailPersonal,
+      Email:              val('f-Email'),
+      EmailPersonal:      val('f-EmailPersonal'),
       Observacion:        val('f-Observacion'),
       Supervisor:         val('f-Supervisor'),
     };
